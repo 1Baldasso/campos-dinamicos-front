@@ -1,4 +1,5 @@
-import { Button, Form, Input, Select, Table } from "antd";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { Button, Flex, Form, Input, Select, Table } from "antd";
 import "./App.css";
 import { useEffect, useState } from "react";
 import axios from "axios";
@@ -46,23 +47,35 @@ const App = () => {
         `https://localhost:7089/camposdinamicos/data/${id}`
       );
       const json = await response.data;
-      const keys = [{ title: "fixo", dataIndex: "fixo" }];
-      for (const key in JSON.parse(json.dinamico)) {
-        console.log(key);
+      const keys = [
+        {
+          title: "Fixo",
+          dataIndex: "fixo",
+        },
+      ];
+      const dinamico = JSON.parse(json.data.dinamico);
+      for (const item of json.campos) {
+        if (!dinamico[item.name] || dinamico[item.name] === "") {
+          dinamico[item.name] = "Não informado";
+        }
+        if (dinamico[item.name] === true || dinamico[item.name] === false) {
+          dinamico[item.name] = dinamico[item.name] ? "Sim" : "Não";
+        }
         keys.push({
-          title: key,
-          dataIndex: key,
+          title: item.label,
+          dataIndex: item.name,
         });
       }
       setData(json);
       setTableData([
-        { id: json.id, fixo: json.fixo, ...JSON.parse(json.dinamico) },
+        {
+          id: json.id,
+          fixo: json.data.fixo,
+          ...dinamico,
+        },
       ]);
       //@ts-expect-error tableColumns
       setTableColumns(keys);
-      console.log(json);
-      console.log(tableColumns);
-      console.log(tableData);
     };
     const fetchCampos = async () => {
       const response = await axios.get(
@@ -72,6 +85,7 @@ const App = () => {
       setCampos(json);
       setLoading(false);
     };
+
     fetchCampos().then(fetchData);
   }, [id]);
 
@@ -79,38 +93,35 @@ const App = () => {
     !loading &&
     campos &&
     campos.length > 0 && (
-      <>
+      <Flex vertical gap="large" wrap style={{ width: "80%" }}>
         <Form form={form}>
-          {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            campos.map((campo: any) => (
-              <Form.Item
-                key={campo.id}
-                name={campo.name}
-                label={campo.label}
-                required={campo.required}
-                valuePropName={
-                  campo.type === CampoTipo.Checkbox ? "checked" : "value"
-                }
-              >
-                {campo.type === CampoTipo.Text ? (
-                  <Input type="text" />
-                ) : campo.type === CampoTipo.Mask ? (
-                  <Input type="text" />
-                ) : campo.type === CampoTipo.Select ? (
-                  <Select options={JSON.parse(campo.extraData)} />
-                ) : campo.type === CampoTipo.Checkbox ? (
-                  <Input type="checkbox" />
-                ) : campo.type === CampoTipo.Radio ? (
-                  <Input type="radio" />
-                ) : campo.type === CampoTipo.Number ? (
-                  <Input type="number" />
-                ) : campo.type === CampoTipo.Upload ? (
-                  <Input type="file" />
-                ) : null}
-              </Form.Item>
-            ))
-          }
+          {campos.map((campo: any) => (
+            <Form.Item
+              key={campo.id}
+              name={campo.name}
+              label={campo.label}
+              required={campo.required}
+              valuePropName={
+                campo.type === CampoTipo.Checkbox ? "checked" : "value"
+              }
+            >
+              {campo.type === CampoTipo.Text ? (
+                <Input type="text" />
+              ) : campo.type === CampoTipo.Mask ? (
+                <Input type="text" />
+              ) : campo.type === CampoTipo.Select ? (
+                <Select options={JSON.parse(campo.extraData)} />
+              ) : campo.type === CampoTipo.Checkbox ? (
+                <Input type="checkbox" />
+              ) : campo.type === CampoTipo.Radio ? (
+                <Input type="radio" />
+              ) : campo.type === CampoTipo.Number ? (
+                <Input type="number" />
+              ) : campo.type === CampoTipo.Upload ? (
+                <Input type="file" />
+              ) : null}
+            </Form.Item>
+          ))}
           <Button type="primary" onClick={handleSubmit}>
             Submit
           </Button>
@@ -120,7 +131,7 @@ const App = () => {
             <Table dataSource={tableData} columns={tableColumns} />
           </>
         )}
-      </>
+      </Flex>
     )
   );
 };
